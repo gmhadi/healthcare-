@@ -38,15 +38,31 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
   };
 
   const handleAddToCalendar = () => {
-    // Generate .ics calendar format
+    // Parse appointment date and time into Google Calendar format (YYYYMMDDTHHMMSS)
+    const dateOnly = appointment.preferredDate.split('T')[0];
+    const timeMatch = appointment.preferredTime.match(/(\d+):(\d+)/);
+    if (!timeMatch) return;
+    const isPM = appointment.preferredTime.includes('PM');
+    let hours = parseInt(timeMatch[1], 10);
+    if (isPM && hours !== 12) hours += 12;
+    if (!isPM && hours === 12) hours = 0;
+    const minutes = parseInt(timeMatch[2], 10);
+
+    const startStr = `${dateOnly.replace(/-/g, '')}T${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}00`;
+    // Assume a 30-minute appointment slot
+    const endDate = new Date(`${dateOnly}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+    endDate.setMinutes(endDate.getMinutes() + 30);
+    const endStr = `${endDate.getFullYear()}${String(endDate.getMonth() + 1).padStart(2, '0')}${String(endDate.getDate()).padStart(2, '0')}T${String(endDate.getHours()).padStart(2, '0')}${String(endDate.getMinutes()).padStart(2, '0')}00`;
+    const datesParam = `${startStr}/${endStr}`;
+
     const title = encodeURIComponent(`MediTriage Appointment: ${appointment.clinicName}`);
     const details = encodeURIComponent(
       `Appointment Ref: ${appointment.referenceNumber}\nClinic: ${appointment.clinicName}\nTriage Priority: ${appointment.triageLevel}\nPatient: ${appointment.patientName}`
     );
     const location = encodeURIComponent(appointment.clinicName);
-    
-    // Quick Google Calendar event URL
-    const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}`;
+
+    // Google Calendar event URL with date/time
+    const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${datesParam}`;
     window.open(gCalUrl, '_blank');
     setAddedCalendar(true);
   };
