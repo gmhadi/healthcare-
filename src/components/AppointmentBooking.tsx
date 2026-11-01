@@ -42,10 +42,19 @@ export const AppointmentBooking: React.FC<AppointmentBookingProps> = ({
       ? 'wellness-physio'
       : 'city-health';
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const tomorrow = new Date();
+  // Format calendar dates in the user's local timezone. ISO strings use UTC,
+  // which can shift the booking date backward in timezones ahead of UTC.
+  const formatLocalDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const today = new Date();
+  const todayStr = formatLocalDate(today);
+  const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  const tomorrowStr = formatLocalDate(tomorrow);
 
   const [formData, setFormData] = useState({
     patientName: '',
